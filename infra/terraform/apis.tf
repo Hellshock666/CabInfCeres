@@ -11,6 +11,7 @@ locals {
     "developerconnect.googleapis.com",
     "eventarc.googleapis.com",
     "firebase.googleapis.com",
+    "firebaseextensions.googleapis.com", # vérifiée par firebase deploy --only functions
     "firebaseapphosting.googleapis.com",
     "firebaserules.googleapis.com",
     "firestore.googleapis.com",
