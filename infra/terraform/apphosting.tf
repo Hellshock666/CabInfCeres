@@ -34,3 +34,26 @@ resource "google_firebase_app_hosting_backend" "web" {
     google_project_iam_member.apphosting_runtime,
   ]
 }
+
+# Compte « par défaut » d'App Hosting. Le CLI Firebase (firebase deploy --only apphosting)
+# vérifie sa présence et tente de le créer s'il manque ; le compte de déploiement GitHub n'ayant
+# volontairement pas le droit de créer des comptes de service, Terraform le crée à l'avance.
+resource "google_service_account" "apphosting_default" {
+  project      = var.project_id
+  account_id   = "firebase-app-hosting-compute"
+  display_name = "Firebase App Hosting compute service account"
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_project_iam_member" "apphosting_default" {
+  project = var.project_id
+  role    = "roles/firebaseapphosting.computeRunner"
+  member  = "serviceAccount:${google_service_account.apphosting_default.email}"
+}
+
+resource "google_service_account_iam_member" "deployer_act_as_apphosting_default" {
+  service_account_id = google_service_account.apphosting_default.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.deployer.email}"
+}
