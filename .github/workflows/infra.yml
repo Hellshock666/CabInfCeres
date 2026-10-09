@@ -36,7 +36,7 @@ jobs:
       TF_VAR_project_id: ${{ vars.GCP_PROJECT_ID }}
       TF_VAR_billing_account_id: ${{ secrets.GCP_BILLING_ACCOUNT_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Authentification Google Cloud (WIF)
         uses: google-github-actions/auth@v2
