@@ -1,0 +1,24 @@
+{
+  "name": "cabinet-ceres-functions",
+  "private": true,
+  "description": "Cloud Functions du Cabinet Cérès : purge RGPD des demandes de rappel",
+  "main": "lib/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log",
+    "set-nurse": "node scripts/set-nurse-claim.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,49 @@
+rules_version = '2';
+
+// Règles Firestore – Cabinet Infirmier Cérès
+// Principe : refus par défaut. Le public peut UNIQUEMENT créer une demande de rappel
+// au format strict ; seules les infirmières (custom claim `nurse == true`) peuvent lire,
+// traiter ou supprimer. Aucune donnée de santé n'est acceptée (pas de champ texte libre).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isNurse() {
+      return request.auth != null && request.auth.token.nurse == true;
+    }
+
+    function isValidNewCallbackRequest() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['fullName', 'phone', 'careType', 'timeSlot', 'status', 'createdAt'])
+        && d.keys().hasOnly(['fullName', 'phone', 'careType', 'timeSlot', 'status', 'createdAt'])
+        && d.fullName is string
+        && d.fullName.size() >= 2
+        && d.fullName.size() <= 80
+        && d.phone is string
+        && d.phone.matches('^0[1-9][0-9]{8}$')
+        && d.careType in ['domicile', 'cabinet', 'rappel']
+        && d.timeSlot in ['matin', 'apres-midi']
+        && d.status == 'pending'
+        && d.createdAt == request.time;
+    }
+
+    function isValidStatusChange() {
+      let d = request.resource.data;
+      return d.diff(resource.data).affectedKeys().hasOnly(['status', 'processedAt'])
+        && (
+          (d.status == 'processed' && d.processedAt == request.time)
+          || (d.status == 'pending' && d.processedAt == null)
+        );
+    }
+
+    match /callbackRequests/{requestId} {
+      allow create: if isValidNewCallbackRequest();
+      allow read, delete: if isNurse();
+      allow update: if isNurse() && isValidStatusChange();
+    }
+
+    // Tout le reste est interdit.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

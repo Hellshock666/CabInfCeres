@@ -1,0 +1,65 @@
+name: Déploiement
+
+# Déploie l'application à chaque push sur main (après la CI) :
+# règles + index Firestore, Cloud Functions, puis le site sur App Hosting.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "infra/**"
+      - "docs/**"
+      - "**.md"
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Cibles firebase deploy (ex. firestore,functions,apphosting)"
+        required: false
+        default: "firestore,functions,apphosting"
+
+permissions:
+  contents: read
+  id-token: write # OIDC → Workload Identity Federation (aucune clé stockée)
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  FIREBASE_TOOLS_VERSION: "14"
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: firebase deploy
+    needs: ci
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Authentification Google Cloud (WIF)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+
+      - name: Dépendances des fonctions
+        run: npm ci
+        working-directory: functions
+
+      - name: firebase deploy
+        run: |
+          npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} deploy \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --only "${{ inputs.only || 'firestore,functions,apphosting' }}" \
+            --non-interactive --force

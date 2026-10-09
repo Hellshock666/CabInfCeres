@@ -1,0 +1,35 @@
+# dépendances
+node_modules/
+functions/node_modules/
+
+# builds
+.next/
+out/
+build/
+functions/lib/
+*.tsbuildinfo
+next-env.d.ts
+
+# environnement (ne jamais committer les vraies valeurs)
+.env
+.env*.local
+functions/.env*
+service-account*.json
+
+# Firebase
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# divers
+.DS_Store
+*.log
+
+# Terraform (l'état est stocké dans GCS, jamais dans le dépôt)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+crash.log

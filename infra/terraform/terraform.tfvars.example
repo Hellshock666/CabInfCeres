@@ -1,0 +1,6 @@
+# Copier en terraform.tfvars (non versionné) pour un usage local.
+# En CI, ces valeurs viennent des variables GitHub (TF_VAR_*).
+project_id         = "cabinet-ceres"
+billing_account_id = "XXXXXX-XXXXXX-XXXXXX"
+budget_amount      = 5
+# custom_domains   = ["www.mon-domaine.fr"]

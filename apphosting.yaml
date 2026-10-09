@@ -1,0 +1,21 @@
+# Configuration Firebase App Hosting – https://firebase.google.com/docs/app-hosting/configure
+# La configuration Web Firebase est injectée automatiquement (FIREBASE_WEBAPP_CONFIG, voir next.config.ts) :
+# aucune valeur à recopier ici.
+
+runConfig:
+  minInstances: 0   # 1 = plus de démarrage à froid, mais coût mensuel fixe
+  maxInstances: 2
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  # URL canonique (SEO, sitemap, Open Graph). À remplacer par le domaine personnalisé le moment venu.
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://web--cabinet-ceres.europe-west4.hosted.app
+    availability: [BUILD, RUNTIME]
+
+  # Firebase App Check (reCAPTCHA Enterprise) – optionnel, laisser vide tant qu'il n'est pas configuré.
+  - variable: NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY
+    value: ""
+    availability: [BUILD]
