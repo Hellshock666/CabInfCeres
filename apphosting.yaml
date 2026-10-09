@@ -15,7 +15,8 @@ env:
     value: https://web--cabinet-ceres.europe-west4.hosted.app
     availability: [BUILD, RUNTIME]
 
-  # Firebase App Check (reCAPTCHA Enterprise) – optionnel, laisser vide tant qu'il n'est pas configuré.
-  - variable: NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY
-    value: ""
-    availability: [BUILD]
+  # Firebase App Check (reCAPTCHA Enterprise) – à ajouter une fois la clé créée
+  # (App Hosting refuse une variable à valeur vide) :
+  # - variable: NEXT_PUBLIC_RECAPTCHA_ENTERPRISE_SITE_KEY
+  #   value: <clé de site>
+  #   availability: [BUILD]
