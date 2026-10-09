@@ -24,7 +24,7 @@ const BATCH_SIZE = 400;
 
 export const purgeExpiredCallbackRequests = onSchedule(
   {
-    schedule: "every 1 hours",
+    schedule: "0 * * * *", // toutes les heures, à la minute 0 (syntaxe cron Unix)
     timeZone: "Europe/Paris",
     retryCount: 3,
     timeoutSeconds: 120,
