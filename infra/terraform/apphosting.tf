@@ -57,3 +57,17 @@ resource "google_service_account_iam_member" "deployer_act_as_apphosting_default
   role               = "roles/iam.serviceAccountUser"
   member             = "serviceAccount:${google_service_account.deployer.email}"
 }
+
+# Rôles que le CLI Firebase attribue à ce compte lors d'un déploiement App Hosting depuis
+# une source locale : déclarés ici pour que l'état IAM du projet reste décrit dans le dépôt.
+resource "google_project_iam_member" "apphosting_default_extra" {
+  for_each = toset([
+    "roles/developerconnect.readTokenAccessor",
+    "roles/firebase.sdkAdminServiceAgent",
+    "roles/storage.objectViewer",
+  ])
+
+  project = var.project_id
+  role    = each.value
+  member  = "serviceAccount:${google_service_account.apphosting_default.email}"
+}

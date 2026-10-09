@@ -1,7 +1,10 @@
 name: Déploiement
 
 # Déploie l'application à chaque push sur main (après la CI) :
-# règles + index Firestore, Cloud Functions, puis le site sur App Hosting.
+#   1. règles + index Firestore et Cloud Functions, avec le compte limité « github-deployer » ;
+#   2. le site sur App Hosting, avec le compte Terraform : le CLI Firebase recrée à chaque
+#      déploiement le compte « firebase-app-hosting-compute » et met à jour les droits du projet,
+#      ce qui exige un niveau propriétaire que le compte limité n'a volontairement pas.
 on:
   push:
     branches: [main]
@@ -11,10 +14,11 @@ on:
       - "**.md"
   workflow_dispatch:
     inputs:
-      only:
-        description: "Cibles firebase deploy (ex. firestore,functions,apphosting)"
-        required: false
-        default: "firestore,functions,apphosting"
+      target:
+        description: "Que déployer ?"
+        type: choice
+        options: [tout, backend, site]
+        default: tout
 
 permissions:
   contents: read
@@ -47,19 +51,38 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
 
-      - name: Authentification Google Cloud (WIF)
+      - name: Dépendances des fonctions
+        run: npm ci
+        working-directory: functions
+
+      # --- 1. Firestore + fonctions (compte limité) ---
+      - name: Authentification Google Cloud (github-deployer)
+        if: inputs.target != 'site'
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
           service_account: ${{ vars.GCP_DEPLOY_SA }}
 
-      - name: Dépendances des fonctions
-        run: npm ci
-        working-directory: functions
-
-      - name: firebase deploy
+      - name: Déployer règles Firestore et fonctions
+        if: inputs.target != 'site'
         run: |
           npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} deploy \
             --project "${{ vars.GCP_PROJECT_ID }}" \
-            --only "${{ inputs.only || 'firestore,functions,apphosting' }}" \
+            --only "firestore,functions" \
+            --non-interactive --force
+
+      # --- 2. Site App Hosting (compte Terraform) ---
+      - name: Authentification Google Cloud (github-terraform)
+        if: inputs.target != 'backend'
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_TERRAFORM_SA }}
+
+      - name: Déployer le site (App Hosting)
+        if: inputs.target != 'backend'
+        run: |
+          npx --yes firebase-tools@${FIREBASE_TOOLS_VERSION} deploy \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --only "apphosting" \
             --non-interactive --force
