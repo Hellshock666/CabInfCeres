@@ -4,11 +4,13 @@ Tout est décrit dans le dépôt :
 
 | Élément | Où | Déployé par |
 |---|---|---|
-| Projet Firebase, APIs, Firestore, Auth, App Hosting (backend), comptes de service, fédération GitHub, budget | `infra/terraform/` | workflow **Infrastructure** (`infra.yml`) |
-| Règles et index Firestore | `firestore.rules`, `firestore.indexes.json` | workflow **Déploiement** (`deploy.yml`) |
-| Fonction de purge RGPD | `functions/` | workflow **Déploiement** |
-| Site Next.js | `src/`, `apphosting.yaml` | workflow **Déploiement** (App Hosting, source locale) |
+| Projet Firebase, APIs, Firestore, Auth, App Hosting (backend + nettoyage des images), comptes de service, fédération GitHub, budget | `infra/terraform/` | workflow **Infrastructure** (`infra.yml`) |
+| Règles et index Firestore | `firestore.rules`, `firestore.indexes.json` | workflow **Déploiement** (`deploy.yml`), compte limité `github-deployer` |
+| Fonction de purge RGPD | `functions/` | workflow **Déploiement**, compte limité `github-deployer` |
+| Site Next.js | `src/`, `apphosting.yaml` | workflow **Déploiement** (App Hosting, source locale), compte `github-terraform`* |
 | Contrôles qualité | `ci.yml` | chaque pull request + avant chaque déploiement |
+
+\* Le CLI Firebase recrée à chaque déploiement App Hosting le compte `firebase-app-hosting-compute` et réécrit les droits du projet : cela exige un niveau propriétaire, d'où l'usage du compte Terraform pour cette seule étape.
 
 Aucune clé n'est stockée : GitHub Actions s'authentifie auprès de Google Cloud par **Workload Identity Federation**, et seule la branche `main` de `Hellshock666/CabInfCeres` y est autorisée. Les pull requests (y compris depuis des forks, le dépôt étant public) ne peuvent rien déployer.
 
@@ -76,4 +78,10 @@ Chaque commande affiche un lien à transmettre à l'infirmier pour qu'il choisis
 | `terraform apply` : *Billing account not found* ou erreur sur Identity Platform | Forfait Blaze non activé |
 | `terraform apply` : base Firestore déjà existante | Créée depuis la console : `terraform import google_firestore_database.default "projects/cabinet-ceres/databases/(default)"` |
 | Workflow : *Permission denied* lors de l'authentification | Variables GitHub absentes (relancer le bootstrap), ou exécution depuis une autre branche que `main` |
+| `terraform apply` : dépôt `firebaseapphosting-images` déjà existant | Un déploiement App Hosting a eu lieu avant Terraform : `terraform import google_artifact_registry_repository.apphosting_images "projects/cabinet-ceres/locations/europe-west4/repositories/firebaseapphosting-images"` |
 | Déploiement des fonctions : erreur de rôle Cloud Build | Relancer le workflow : la propagation des droits IAM peut prendre quelques minutes après le premier `apply` |
+| `firebase deploy` : `iam.serviceAccounts.ActAs` sur `…@appspot.gserviceaccount.com` | Droit déclaré dans `cicd.tf` (`deployer_act_as_appspot`) |
+| `firebase deploy` : *Permission denied enabling firebaseextensions.googleapis.com* | API déclarée dans `apis.tf` |
+| Cloud Scheduler : *400 Request contains an invalid argument* | Le compte de service de la fonction doit être une adresse complète (pas `nom@`) |
+| App Hosting : *Fichier apphosting.yaml non valide* | Aucune variable d'environnement à valeur vide n'est acceptée |
+| Windows : *User code failed to load … Timeout after 10000* (déploiement local) | `$env:FUNCTIONS_DISCOVERY_TIMEOUT = 60` avant `firebase deploy` |
