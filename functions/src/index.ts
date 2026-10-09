@@ -22,6 +22,12 @@ const CALLBACK_COLLECTION = "callbackRequests";
 const RETENTION_DAYS = 14;
 const BATCH_SIZE = 400;
 
+// Adresse complète du compte de service (et non l'abréviation « purge-function@ ») :
+// Cloud Scheduler l'utilise telle quelle pour signer l'appel de la fonction et rejette
+// une adresse incomplète (« 400 Request contains an invalid argument »).
+const PROJECT_ID = process.env.GCLOUD_PROJECT ?? "cabinet-ceres";
+const PURGE_SERVICE_ACCOUNT = `purge-function@${PROJECT_ID}.iam.gserviceaccount.com`;
+
 export const purgeExpiredCallbackRequests = onSchedule(
   {
     schedule: "0 * * * *", // toutes les heures, à la minute 0 (syntaxe cron Unix)
@@ -30,7 +36,7 @@ export const purgeExpiredCallbackRequests = onSchedule(
     timeoutSeconds: 120,
     memory: "256MiB",
     // Compte de service dédié créé par Terraform (infra/terraform/functions.tf) : accès Firestore uniquement.
-    serviceAccount: "purge-function@",
+    serviceAccount: PURGE_SERVICE_ACCOUNT,
   },
   async () => {
     const db = getFirestore();
