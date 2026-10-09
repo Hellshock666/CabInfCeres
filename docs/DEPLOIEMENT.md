@@ -6,7 +6,7 @@ Tout est décrit dans le dépôt :
 |---|---|---|
 | Projet Firebase, APIs, Firestore, Auth, App Hosting (backend + nettoyage des images), comptes de service, fédération GitHub, budget | `infra/terraform/` | workflow **Infrastructure** (`infra.yml`) |
 | Règles et index Firestore | `firestore.rules`, `firestore.indexes.json` | workflow **Déploiement** (`deploy.yml`), compte limité `github-deployer` |
-| Fonction de purge RGPD | `functions/` | workflow **Déploiement**, compte limité `github-deployer` |
+| Fonction planifiée (statistiques + purge RGPD) | `functions/` | workflow **Déploiement**, compte limité `github-deployer` |
 | Site Next.js | `src/`, `apphosting.yaml` | workflow **Déploiement** (App Hosting, source locale), compte `github-terraform`* |
 | Contrôles qualité | `ci.yml` | chaque pull request + avant chaque déploiement |
 
@@ -57,6 +57,17 @@ npm run set-nurse -- vincent.barriere@exemple.fr --create
 ```
 
 Chaque commande affiche un lien à transmettre à l'infirmier pour qu'il choisisse son mot de passe. Pour retirer un accès, utilisez `--revoke`. L'inscription publique est désactivée : seul l'administrateur crée les comptes.
+
+### 5. Accès aux statistiques (propriétaire)
+
+La page `/admin/stats` (demandes reçues, taux et délai de traitement, disponibilité et temps de réponse du site, répartitions) est réservée au rôle `owner` :
+
+```powershell
+cd functions
+npm run set-nurse -- votre.adresse@exemple.fr --owner --create
+```
+
+Sans `--create` si le compte existe déjà. Un compte peut cumuler les deux rôles (relancer la commande sans `--owner`). Retrait : `--owner --revoke`. Les compteurs sont recalculés toutes les 15 minutes par la fonction planifiée ; la disponibilité provient d'un test Cloud Monitoring (3 régions, toutes les 5 min, gratuit).
 
 ## Au quotidien
 

@@ -19,6 +19,7 @@ locals {
     "iamcredentials.googleapis.com",
     "identitytoolkit.googleapis.com",
     "logging.googleapis.com",
+    "monitoring.googleapis.com", # test de disponibilité du site (monitoring.tf)
     "pubsub.googleapis.com",
     "run.googleapis.com",
     "secretmanager.googleapis.com",

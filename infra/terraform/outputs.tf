@@ -23,3 +23,8 @@ output "deployer_service_account" {
 output "terraform_service_account" {
   value = google_service_account.terraform.email
 }
+
+output "uptime_check_id" {
+  description = "Identifiant du test de disponibilité (Cloud Monitoring)."
+  value       = google_monitoring_uptime_check_config.site.uptime_check_id
+}

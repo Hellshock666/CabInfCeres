@@ -3,17 +3,26 @@
 import { useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 
+/** Rôles portés par les custom claims (attribués via functions/scripts/set-nurse-claim.mjs). */
+export interface StaffRoles {
+  /** Espace infirmiers : demandes de rappel. */
+  nurse: boolean;
+  /** Propriétaire du site : statistiques (/admin/stats). */
+  owner: boolean;
+}
+
 export type AuthState =
   | { status: "loading" }
   | { status: "signedOut" }
-  | { status: "forbidden"; user: User }
-  | { status: "nurse"; user: User };
+  | { status: "signedIn"; user: User; roles: StaffRoles };
+
+const NO_ROLES: StaffRoles = { nurse: false, owner: false };
 
 /**
- * Suit l'état d'authentification et vérifie le custom claim `nurse`.
- * Le claim est attribué par un administrateur via functions/scripts/set-nurse-claim.mjs.
+ * Suit l'état d'authentification et lit les custom claims `nurse` / `owner`.
+ * Garde d'affichage uniquement : l'accès aux données est imposé par firestore.rules.
  */
-export function useNurseAuth(): AuthState {
+export function useStaffAuth(): AuthState {
   const [state, setState] = useState<AuthState>({ status: "loading" });
 
   useEffect(() => {
@@ -34,10 +43,14 @@ export function useNurseAuth(): AuthState {
         }
         try {
           // Rafraîchissement forcé : prend en compte un claim attribué récemment.
-          const token = await getIdTokenResult(user, true);
-          setState(token.claims.nurse === true ? { status: "nurse", user } : { status: "forbidden", user });
+          const { claims } = await getIdTokenResult(user, true);
+          setState({
+            status: "signedIn",
+            user,
+            roles: { nurse: claims.nurse === true, owner: claims.owner === true },
+          });
         } catch {
-          setState({ status: "forbidden", user });
+          setState({ status: "signedIn", user, roles: NO_ROLES });
         }
       });
     })();

@@ -4,11 +4,17 @@ rules_version = '2';
 // Principe : refus par défaut. Le public peut UNIQUEMENT créer une demande de rappel
 // au format strict ; seules les infirmières (custom claim `nurse == true`) peuvent lire,
 // traiter ou supprimer. Aucune donnée de santé n'est acceptée (pas de champ texte libre).
+// Les statistiques anonymes (écrites uniquement par la fonction planifiée) sont réservées
+// au propriétaire du site (custom claim `owner == true`).
 service cloud.firestore {
   match /databases/{database}/documents {
 
     function isNurse() {
       return request.auth != null && request.auth.token.nurse == true;
+    }
+
+    function isOwner() {
+      return request.auth != null && request.auth.token.owner == true;
     }
 
     function isValidNewCallbackRequest() {
@@ -39,6 +45,16 @@ service cloud.firestore {
       allow create: if isValidNewCallbackRequest();
       allow read, delete: if isNurse();
       allow update: if isNurse() && isValidStatusChange();
+    }
+
+    match /stats_daily/{day} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
+    match /stats_meta/{docId} {
+      allow read: if isOwner();
+      allow write: if false;
     }
 
     // Tout le reste est interdit.

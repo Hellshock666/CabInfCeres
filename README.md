@@ -14,15 +14,15 @@ Site vitrine mobile-first (PWA) + espace infirmiers sécurisé.
 ├── docs/DEPLOIEMENT.md          # Guide de déploiement
 ├── firestore.rules              # Sécurité : création publique stricte, lecture réservée aux infirmiers
 ├── functions/
-│   ├── src/index.ts             # Purge RGPD planifiée (toutes les heures, > 14 jours)
-│   └── scripts/set-nurse-claim.mjs  # Création des comptes infirmiers (rôle nurse)
+│   ├── src/index.ts             # Tâche planifiée (15 min) : statistiques anonymes, disponibilité, purge RGPD > 14 jours
+│   └── scripts/set-nurse-claim.mjs  # Comptes : rôle nurse (demandes) ou --owner (statistiques)
 ├── public/
 │   ├── manifest.json · sw.js · offline.html   # PWA
 │   └── icons/                   # 192/512 (any + maskable), apple-touch-icon
 └── src/
     ├── app/
     │   ├── layout.tsx · page.tsx · globals.css
-    │   ├── admin/               # /admin – tableau de bord (Firebase Auth)
+    │   ├── admin/               # /admin – demandes (rôle nurse) · /admin/stats – statistiques (rôle owner)
     │   ├── confidentialite/     # Politique de confidentialité & mentions légales
     │   └── robots.ts · sitemap.ts
     ├── assets/hero-cathedrale.webp  # ⚠️ visuel PROVISOIRE (extrait du mockup) – à remplacer
@@ -64,10 +64,11 @@ Guide complet : **[docs/DEPLOIEMENT.md](docs/DEPLOIEMENT.md)**. En résumé :
 - **Minimisation** : 4 champs seulement (nom, téléphone, type de prise en charge, créneau). Aucune zone de texte libre, aucune donnée de santé ; les valeurs des listes sont purement logistiques.
 - **Double validation** : côté client (`validateCallbackInput`) **et** côté serveur (`firestore.rules` : clés exactes, énumérations, format du téléphone, horodatage serveur, statut imposé).
 - **Accès** : lecture / traitement / suppression uniquement avec le custom claim `nurse` (vérifié par les règles, pas seulement par l'interface).
-- **Conservation** : purge automatique horaire de *toutes* les demandes de plus de 14 jours (traitées ou non) ; suppression manuelle possible dès le traitement.
+- **Conservation** : purge automatique (toutes les 15 min) de *toutes* les demandes de plus de 14 jours (traitées ou non) ; suppression manuelle possible dès le traitement.
 - **Information** : mention sous le formulaire + page `/confidentialite` (les champs `[À COMPLÉTER]` doivent être renseignés).
 - **Anti-spam** : pot de miel + délai minimal de saisie ; App Check recommandé.
 - Pas de cookie de mesure d'audience ; les logs de la fonction ne contiennent aucune donnée personnelle.
+- **Statistiques** (`/admin/stats`, rôle `owner`) : compteurs journaliers agrégés (`stats_daily`) sans nom ni téléphone, conservés au-delà de la purge ; disponibilité mesurée par un test Cloud Monitoring (`infra/terraform/monitoring.tf`).
 
 ## Performance
 

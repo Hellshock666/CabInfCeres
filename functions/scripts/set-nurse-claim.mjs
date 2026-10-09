@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Gestion des comptes de l'espace infirmiers (rôle `nurse`).
+ * Gestion des comptes de l'espace infirmiers (rôle `nurse`) et du propriétaire (rôle `owner`,
+ * accès à la page /admin/stats).
  *
  * Prérequis (une fois) :
  *   gcloud auth application-default login
@@ -11,6 +12,10 @@
  *   npm run set-nurse -- infirmier@exemple.fr            → accorde l'accès à un compte existant
  *   npm run set-nurse -- infirmier@exemple.fr --revoke   → retire l'accès et déconnecte le compte
  *
+ *   Ajouter --owner pour gérer le rôle propriétaire (statistiques) au lieu du rôle infirmier :
+ *   npm run set-nurse -- moi@exemple.fr --owner --create → crée le compte et accorde l'accès aux statistiques
+ *   npm run set-nurse -- moi@exemple.fr --owner --revoke → retire l'accès aux statistiques
+ *
  * Projet : variable GOOGLE_CLOUD_PROJECT, sinon « cabinet-ceres ».
  */
 import { randomBytes } from "node:crypto";
@@ -19,11 +24,13 @@ import { getAuth } from "firebase-admin/auth";
 
 const [email, ...flags] = process.argv.slice(2);
 if (!email || !email.includes("@")) {
-  console.error("Usage : npm run set-nurse -- <email> [--create | --revoke]");
+  console.error("Usage : npm run set-nurse -- <email> [--owner] [--create | --revoke]");
   process.exit(1);
 }
 const create = flags.includes("--create");
 const revoke = flags.includes("--revoke");
+const role = flags.includes("--owner") ? "owner" : "nurse";
+const roleLabel = role === "owner" ? "statistiques (propriétaire)" : "espace infirmiers";
 const projectId = process.env.GOOGLE_CLOUD_PROJECT ?? "cabinet-ceres";
 
 initializeApp({ credential: applicationDefault(), projectId });
@@ -43,15 +50,15 @@ async function findOrCreateUser() {
 const { user, created } = await findOrCreateUser();
 const claims = { ...(user.customClaims ?? {}) };
 
-if (revoke) delete claims.nurse;
-else claims.nurse = true;
+if (revoke) delete claims[role];
+else claims[role] = true;
 
 await auth.setCustomUserClaims(user.uid, claims);
 if (revoke) await auth.revokeRefreshTokens(user.uid);
 
-console.log(`${created ? "Compte créé. " : ""}${revoke ? "Accès retiré" : "Accès accordé"} pour ${email}.`);
+console.log(`${created ? "Compte créé. " : ""}${revoke ? "Accès retiré" : "Accès accordé"} (${roleLabel}) pour ${email}.`);
 
 if (created) {
   const link = await auth.generatePasswordResetLink(email);
-  console.log("\nLien à transmettre à l'infirmier pour définir son mot de passe (valable 1 h) :\n" + link);
+  console.log("\nLien pour définir le mot de passe du compte (valable 1 h) :\n" + link);
 }
