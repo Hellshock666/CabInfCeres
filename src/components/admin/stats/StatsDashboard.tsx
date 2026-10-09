@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { CARE_TYPES, RETENTION_DAYS, TIME_SLOTS } from "@/lib/callback-requests";
 import {
@@ -34,27 +34,38 @@ function relative(from: Date, now: Date): string {
   return formatDuration((now.getTime() - from.getTime()) / 60_000);
 }
 
+/** Charge la période la plus longue + la période précédente (comparaison), en une seule requête. */
+async function loadStats(): Promise<LoadState> {
+  try {
+    const { fetchDailyStats, fetchStatsMeta } = await import("@/lib/firebase/stats");
+    const from = lastDays(MAX_DAYS * 2)[0];
+    const [byDay, meta] = await Promise.all([fetchDailyStats(from), fetchStatsMeta()]);
+    return { status: "ready", byDay, meta, loadedAt: new Date() };
+  } catch (error) {
+    console.error(error);
+    return { status: "error", message: "Impossible de charger les statistiques (droits insuffisants ou réseau)." };
+  }
+}
+
 export function StatsDashboard() {
   const [state, setState] = useState<LoadState>({ status: "loading" });
   const [period, setPeriod] = useState<number>(30);
 
-  const load = useCallback(async () => {
-    setState({ status: "loading" });
-    try {
-      const { fetchDailyStats, fetchStatsMeta } = await import("@/lib/firebase/stats");
-      // Période la plus longue + période précédente (comparaison), en une seule requête.
-      const from = lastDays(MAX_DAYS * 2)[0];
-      const [byDay, meta] = await Promise.all([fetchDailyStats(from), fetchStatsMeta()]);
-      setState({ status: "ready", byDay, meta, loadedAt: new Date() });
-    } catch (error) {
-      console.error(error);
-      setState({ status: "error", message: "Impossible de charger les statistiques (droits insuffisants ou réseau)." });
-    }
+  // Chargement initial : l'état n'est modifié qu'à l'arrivée des données (pas de setState synchrone).
+  useEffect(() => {
+    let cancelled = false;
+    void loadStats().then((next) => {
+      if (!cancelled) setState(next);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  function refresh() {
+    setState({ status: "loading" });
+    void loadStats().then(setState);
+  }
 
   const view = useMemo(() => {
     if (state.status !== "ready") return null;
@@ -93,7 +104,7 @@ export function StatsDashboard() {
           </div>
           <button
             type="button"
-            onClick={() => void load()}
+            onClick={refresh}
             className="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
           >
             <Icon name="refresh" className="size-4" />
