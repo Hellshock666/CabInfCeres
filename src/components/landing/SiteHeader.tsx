@@ -2,7 +2,9 @@ import Link from "next/link";
 import { mainNav } from "@/config/navigation";
 import { site } from "@/config/site";
 import { Logo } from "@/components/ui/LogoMark";
+import { Icon } from "@/components/ui/Icon";
 import { PhoneIconLink, PhoneLink } from "@/components/ui/PhoneLink";
+import { ScrollToContactLink } from "@/components/ui/ScrollToContactLink";
 import { MobileMenu } from "./MobileMenu";
 
 export function SiteHeader() {
@@ -33,6 +35,15 @@ export function SiteHeader() {
         <div className="flex items-center gap-2 sm:gap-5">
           <span className="hidden sm:block">
             <PhoneLink />
+          </span>
+          {/* Mobile : accès direct au formulaire de rappel, puis appel */}
+          <span className="sm:hidden">
+            <ScrollToContactLink
+              ariaLabel="Demander un rappel (aller au formulaire)"
+              className="inline-flex size-11 items-center justify-center rounded-full border border-brand-200 bg-white text-brand-800 shadow-sm transition-colors hover:bg-brand-50"
+            >
+              <Icon name="calendar" className="size-5" />
+            </ScrollToContactLink>
           </span>
           <span className="sm:hidden">
             <PhoneIconLink />
