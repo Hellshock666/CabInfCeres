@@ -1,6 +1,6 @@
 {
   "name": "cabinet-ceres",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "description": "Site du Cabinet Infirmier Cérès – Reims Centre Cathédrale (Next.js + Firebase)",
   "scripts": {
