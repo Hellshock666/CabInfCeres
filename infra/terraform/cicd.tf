@@ -84,6 +84,14 @@ resource "google_service_account_iam_member" "deployer_act_as_compute_default" {
   depends_on = [google_project_service.apis]
 }
 
+# Firebase CLI vérifie aussi ce droit sur le compte App Engine par défaut avant de déployer
+# des Cloud Functions (même si la fonction s'exécute avec son propre compte de service).
+resource "google_service_account_iam_member" "deployer_act_as_appspot" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${var.project_id}@appspot.gserviceaccount.com"
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.deployer.email}"
+}
+
 resource "google_service_account_iam_member" "deployer_wif" {
   service_account_id = google_service_account.deployer.name
   role               = "roles/iam.workloadIdentityUser"
