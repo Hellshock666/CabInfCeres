@@ -33,3 +33,6 @@ ui-debug.log*
 *.tfplan
 terraform.tfvars
 crash.log
+
+# Dossier de travail de l’application Claude (aperçus)
+Claude outputs/
