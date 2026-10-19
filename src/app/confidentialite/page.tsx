@@ -31,8 +31,15 @@ export default function PrivacyPage() {
             <p>
               {site.fullName} – {site.team.map((m) => m.name).join(" et ")}, infirmiers diplômés d&apos;État,{" "}
               {site.address.streetAddress}, {site.address.postalCode} {site.address.locality}. Téléphone :{" "}
-              {site.phone.display}. [À COMPLÉTER : n° RPPS / SIRET]
+              {site.phone.display}. [À COMPLÉTER : SIRET]
             </p>
+            <ul>
+              {site.team.map((m) => (
+                <li key={m.rpps}>
+                  {m.name}, {m.title.toLowerCase()} – n° RPPS {m.rpps}
+                </li>
+              ))}
+            </ul>
           </section>
 
           <section>

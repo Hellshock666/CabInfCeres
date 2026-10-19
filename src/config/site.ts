@@ -47,8 +47,8 @@ export const site = {
   },
 
   team: [
-    { name: "Jean-Daniel Fleury", title: "Infirmier diplômé d'État" },
-    { name: "Vincent Barrière", title: "Infirmier diplômé d'État" },
+    { name: "Jean-Daniel Fleury", title: "Infirmier diplômé d'État", rpps: "10102577318" },
+    { name: "Vincent Barrière", title: "Infirmier diplômé d'État", rpps: "10102431029" },
   ],
 
   experience: {
