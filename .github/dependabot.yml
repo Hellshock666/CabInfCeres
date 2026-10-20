@@ -1,27 +1,49 @@
 version: 2
 updates:
+  # Site Next.js : mineures/correctifs groupés (merge rapide), majeures à part (à tester).
   - package-ecosystem: npm
     directory: "/"
     schedule:
       interval: weekly
     groups:
       dependencies:
-        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      majeures:
+        update-types: ["major"]
+    ignore:
+      # Aligné sur le runtime Node 22 (CI + App Hosting).
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
+  # Cloud Functions (purge RGPD) : même principe.
   - package-ecosystem: npm
     directory: "/functions"
     schedule:
       interval: weekly
     groups:
       dependencies:
-        patterns: ["*"]
+        update-types: ["minor", "patch"]
+      majeures:
+        update-types: ["major"]
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
+  # Une seule PR pour toutes les GitHub Actions.
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
 
+  # google et google-beta toujours mis à jour ensemble.
+  # Attention : un merge sur main déclenche un terraform apply automatique.
   - package-ecosystem: terraform
     directory: "/infra/terraform"
     schedule:
       interval: monthly
+    groups:
+      providers-google:
+        patterns: ["hashicorp/google*"]
